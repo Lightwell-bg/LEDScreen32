@@ -65,7 +65,9 @@ void setup() {
         delay(100);  
     }
     if (WiFi.status() == WL_CONNECTED && (isLedWeather || isLedForecast || isLedSea))  {
-        strWeather = GetWeather(); delay(1000); strWeatherFcast = GetWeatherForecast(); delay(1000); strSea = GetSea();
+        if (isLedWeather) {strWeather = GetWeather(); delay(1000);}
+        if (isLedForecast) {strWeatherFcast = GetWeatherForecast(); delay(1000);}
+        if (isLedSea) strSea = GetSea();
     }
 }
 

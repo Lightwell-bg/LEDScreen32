@@ -272,18 +272,22 @@ void init_HTTPServer(void) {
         //root = String();
         P.displaySuspend(false);
     });    
+
     HTTP.on("/lang", HTTP_GET, [](AsyncWebServerRequest *request){    
         if(request->getParam("lang")->value() == "RU" && lang !=0) lang = 0; 
-        if(request->getParam("lang")->value() == "BG" && lang !=1) lang = 1; 
-        if(request->getParam("lang")->value() == "EN" && lang !=2) lang = 2; 
-        else return; 
-        Serial.print("Set lang: ");    Serial.println(request->getParam("lang")->value().c_str());
+        else if(request->getParam("lang")->value() == "BG" && lang !=1) lang = 1; 
+        else if(request->getParam("lang")->value() == "EN" && lang !=2) lang = 2; 
+        else {request->send(200, "text/html", "OK"); return;} 
+        Serial.print("Set lang: ");    Serial.println(request->getParam("lang")->value());
         saveConfig();
-        if (isLedWeather || isLedForecast) {
-            strWeather = GetWeather(); delay(1000); strWeatherFcast = GetWeatherForecast();
+        if (isLedWeather || isLedForecast || isLedSea) {
+            if (isLedWeather) {strWeather = GetWeather(); delay(1000);}
+            if (isLedForecast) {strWeatherFcast = GetWeatherForecast(); delay(1000);}
+            if (isLedSea) strSea = GetSea();
         }
         request->send(200, "text/html", "OK");
-    });           
+    });  
+
     HTTP.on("/ssid", HTTP_GET, [](AsyncWebServerRequest *request){    // SSID и пароль роутера, AP, SSDP /ssid?ssid=home2&password=12345678&ssidAP=home1&passwordAP=8765439&ssdp?ssdp=proba
         ssid = request->getParam("ssid")->value();    // Получаем значение ssid из запроса сохраняем в глобальной переменной
         password = request->getParam("password")->value();  // Получаем значение password из запроса сохраняем в глобальной переменной
@@ -293,12 +297,14 @@ void init_HTTPServer(void) {
         saveConfig();  
           Serial.println("Set SSID: " + ssid + ", Set password: " + password + ", Set SSID AP: " + ssidAP + ", Set AP password: " + passwordAP + ", SSDP: " + SSDP_Name); 
         request->send(200, "text/html", "OK");        
-    });  
+    }); 
+
     HTTP.on("/Time", HTTP_GET, [](AsyncWebServerRequest *request){    
         timeSynch();
         Serial.println(F("timeSynch()")); 
         request->send(200, "text/html", "OK");        
     }); 
+
     HTTP.on("/TimeZone", HTTP_GET, [](AsyncWebServerRequest *request){    
         timezone = request->getParam("timezone")->value().toInt(); // Получаем значение timezone из запроса конвертируем в int сохраняем в глобальной переменной
         isDayLightSaving = request->getParam("isDayLightSaving")->value().toInt(); 
@@ -307,6 +313,7 @@ void init_HTTPServer(void) {
         Serial.println("NTP Time Zone: " + String(timezone) + ",  isDayLightSaving: " + String(isDayLightSaving));
         request->send(200, "text/html", "OK");        
     }); 
+
     HTTP.on("/setntpserver", HTTP_GET, [](AsyncWebServerRequest *request){
         sNtpServerName = request->getParam("ntpserver")->value().c_str(); 
         #if USE_RTC == true
@@ -340,7 +347,32 @@ void init_HTTPServer(void) {
         timeSynch();
         request->send(200, "text/html", "OK"); 
     }); 
-#endif   
+#endif 
+
+    HTTP.on("/Time", HTTP_GET, [](AsyncWebServerRequest *request){
+        timeSynch();
+        request->send(200, "text/html", "time synch");
+    });
+
+    HTTP.on("/TimeZone", HTTP_GET, [](AsyncWebServerRequest *request){
+        timezone = request->getParam("timezone")->value().toInt(); // Получаем значение timezone из запроса конвертируем в int сохраняем в глобальной переменной
+        isDayLightSaving = request->getParam("isDayLightSaving")->value().toInt(); 
+        saveConfig();
+        timeSynch();
+        Serial.println("NTP Time Zone: " + String(timezone) + ",  isDayLightSaving: " + String(isDayLightSaving));
+        request->send(200, "text/html", "OK");
+    });
+
+    HTTP.on("/setntpserver", HTTP_GET, [](AsyncWebServerRequest *request){
+        sNtpServerName = request->getParam("ntpserver")->value(); 
+        #if USE_RTC == true
+            request->getParam("use_sync")->value().toInt()==1?useRTC=false:useRTC=true;
+        #endif
+        saveConfig();
+        timeSynch();
+        Serial.println("sNtpServerName: " + sNtpServerName + ", useRTC: " + useRTC);
+        request->send(200, "text/html", "OK");
+    });
 
     HTTP.on("/ledoption", HTTP_GET, [](AsyncWebServerRequest *request){
         request->getParam("isLedWeather")->value().toInt()==1?isLedWeather=true:isLedWeather=false; 
@@ -364,6 +396,35 @@ void init_HTTPServer(void) {
         request->send(200, "text/html", "OK"); 
     }); 
 
+    HTTP.on("/texts", HTTP_GET, [](AsyncWebServerRequest *request){
+        P.displaySuspend(true);
+        strText0 = request->getParam("ledText0")->value(); 
+        strText1 = request->getParam("ledText1")->value(); 
+        strText2 = request->getParam("ledText2")->value(); 
+        strText3 = request->getParam("ledText3")->value(); 
+        request->getParam("isTxtOn0")->value().toInt()==1?isTxtOn0=true:isTxtOn0=false;
+        request->getParam("isTxtOn1")->value().toInt()==1?isTxtOn1=true:isTxtOn1=false;
+        request->getParam("isTxtOn2")->value().toInt()==1?isTxtOn2=true:isTxtOn2=false;
+        request->getParam("isTxtOn3")->value().toInt()==1?isTxtOn3=true:isTxtOn3=false;
+        txtFrom0 = request->getParam("txtFrom0")->value().toFloat(); txtTo0 = request->getParam("txtTo0")->value().toFloat();
+        txtFrom1 = request->getParam("txtFrom1")->value().toFloat(); txtTo1 = request->getParam("txtTo1")->value().toFloat();
+        txtFrom2 = request->getParam("txtFrom2")->value().toFloat(); txtTo2 = request->getParam("txtTo2")->value().toFloat();
+        txtFrom3 = request->getParam("txtFrom3")->value().toFloat(); txtTo3 = request->getParam("txtTo3")->value().toFloat();
+        request->getParam("isCrLine0")->value().toInt()==1?isCrLine0=true:isCrLine0=false;
+        request->getParam("isCrLine1")->value().toInt()==1?isCrLine1=true:isCrLine1=false;
+        request->getParam("isCrLine2")->value().toInt()==1?isCrLine2=true:isCrLine2=false;
+        request->getParam("isCrLine3")->value().toInt()==1?isCrLine3=true:isCrLine3=false;
+        global_start = request->getParam("global_start")->value().toFloat();
+        global_stop = request->getParam("global_stop")->value().toFloat();
+        saveConfig();                 // Функция сохранения данных во Flash
+        Serial.print("strText ");Serial.print(strText0);Serial.println(strText1);Serial.println(strText2);Serial.println(strText3);
+        Serial.print("isTxtOn0 ");Serial.print(isTxtOn0);Serial.println(txtFrom0);Serial.println(txtTo0);Serial.println(isCrLine0);
+        Serial.print("isTxtOn1 ");Serial.print(isTxtOn1);Serial.println(txtFrom1);Serial.println(txtTo1);Serial.println(isCrLine1);
+        Serial.print("isTxtOn2 ");Serial.print(isTxtOn2);Serial.println(txtFrom2);Serial.println(txtTo2);Serial.println(isCrLine2);
+        Serial.print("isTxtOn3 ");Serial.print(isTxtOn3);Serial.println(txtFrom3);Serial.println(txtTo3);Serial.println(isCrLine3);
+        request->send(200, "text/html", "OK"); 
+        P.displaySuspend(false);
+    }); 
 
     HTTP.onNotFound(notFound);
     HTTP.begin();
