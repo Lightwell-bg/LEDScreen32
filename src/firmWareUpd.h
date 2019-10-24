@@ -1,6 +1,8 @@
 size_t content_len;
 
 void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) {
+  //P.displaySuspend(true);
+  //P.setPause(10000);
   if (!index) {
     Serial.println("Update");
     content_len = request->contentLength();
@@ -25,6 +27,7 @@ void handleDoUpdate(AsyncWebServerRequest *request, const String& filename, size
   }
 
   if (final) {
+    //P.displaySuspend(true);
     AsyncWebServerResponse *response = request->beginResponse(302, "text/plain", "Please wait while the device reboots");
     response->addHeader("Refresh", "20");  
     response->addHeader("Location", "/");
