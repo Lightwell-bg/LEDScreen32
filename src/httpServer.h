@@ -459,7 +459,7 @@ void init_HTTPServer(void) {
         }
         request->send(200, "text/html", "OK"); 
     });   
-
+#if AKA_CLOCK == true
     HTTP.on("/mqttSet", HTTP_GET, [](AsyncWebServerRequest *request){
         request->getParam("mqttOn")->value().toInt()==1?mqttOn=true:mqttOn=false;
         mqtt_server = request->getParam("mqtt_server")->value().c_str();
@@ -468,10 +468,69 @@ void init_HTTPServer(void) {
         mqtt_pass = request->getParam("mqtt_pass")->value().c_str();
         mqtt_name = request->getParam("mqtt_name")->value().c_str();
         mqtt_sub_crline = request->getParam("mqtt_sub_crline")->value().c_str();
-        saveConfig();                 // Функция сохранения данных во Flash
+        mqtt_pub_temp = request->getParam("mqtt_pub_temp")->value().c_str();
+        mqtt_pub_hum = request->getParam("mqtt_pub_hum")->value().c_str();
+        mqtt_pub_press = request->getParam("mqtt_pub_press")->value().c_str();
+        saveConfig();  
         Serial.println("mqtt_server: " + mqtt_server + ", mqtt_user: " + mqtt_user + ", mqtt_name: " + mqtt_name);
         request->send(200, "text/html", "OK"); 
+    }); 
+
+    HTTP.on("/tspeakSet", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->getParam("tspeakOn")->value().toInt()==1?tspeakOn=true:tspeakOn=false;
+        tspeak_server = request->getParam("tspeak_server")->value().c_str();
+        tspeak_channal = request->getParam("tspeak_channal")->value().toInt();
+        tspeak_wapi = request->getParam("tspeak_wapi")->value().c_str();
+        saveConfig();  
+        Serial.println("tspeak_server: " + tspeak_server + ", tspeak_channal: " + tspeak_channal + ", tspeak_wapi: " + tspeak_wapi);
+        request->send(200, "text/html", "OK"); 
+    });
+
+    HTTP.on("/tspeakOn", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->getParam("tspeakOn")->value().toInt()==1?tspeakOn=true:tspeakOn=false;
+        saveConfig();   
+        Serial.println("tspeakOn: " + String(tspeakOn));
+        request->send(200, "text/html", "OK"); 
     });   
+
+    HTTP.on("/Sensor", HTTP_GET, [](AsyncWebServerRequest *request){
+    #if USE_DHT == true 
+        strTHP = onboard[lang] + getTempDHT() + hum[lang] + getHumDHT() + "%";
+    #endif   
+    #if USE_BME280 == true
+        strTHP = onboard[lang] + getTempBME280() + hum[lang] + getHumBME280() + pres[lang] + getPressBME280() + "mm";
+    #endif  
+        Serial.println(strTHP);
+        lastTimePHT = millis();    
+        request->send(200, "text/html", "OK"); 
+    });
+
+    HTTP.on("/setalarm", HTTP_GET, [](AsyncWebServerRequest *request){
+        myAlarm[0].alarm_h = request->getParam("alarm1_h")->value().toInt();
+        myAlarm[0].alarm_m = request->getParam("alarm1_m")->value().toInt(); 
+        myAlarm[0].alarm_stat = request->getParam("alarm1_stat")->value().toInt();  
+        myAlarm[1].alarm_h = request->getParam("alarm2_h")->value().toInt();
+        myAlarm[1].alarm_m = request->getParam("alarm2_m")->value().toInt(); 
+        myAlarm[1].alarm_stat = request->getParam("alarm2_stat")->value().toInt();     
+        saveConfig();
+        Serial.println("alarm1_h: " + String(myAlarm[0].alarm_h) + ", alarm1_m: " + String(myAlarm[0].alarm_m) + ", alarm1_stat: " + String(myAlarm[0].alarm_stat));
+        Serial.println("alarm2_h: " + String(myAlarm[1].alarm_h) + ", alarm2_m: " + String(myAlarm[1].alarm_m) + ", alarm2_stat: " + String(myAlarm[1].alarm_stat));
+        request->send(200, "text/html", "OK"); 
+    });      
+#else
+    HTTP.on("/mqttSet", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->getParam("mqttOn")->value().toInt()==1?mqttOn=true:mqttOn=false;
+        mqtt_server = request->getParam("mqtt_server")->value().c_str();
+        mqtt_port = request->getParam("mqtt_port")->value().toInt();
+        mqtt_user = request->getParam("mqtt_user")->value().c_str();
+        mqtt_pass = request->getParam("mqtt_pass")->value().c_str();
+        mqtt_name = request->getParam("mqtt_name")->value().c_str();
+        mqtt_sub_crline = request->getParam("mqtt_sub_crline")->value().c_str();
+        saveConfig();                 
+        Serial.println("mqtt_server: " + mqtt_server + ", mqtt_user: " + mqtt_user + ", mqtt_name: " + mqtt_name);
+        request->send(200, "text/html", "OK"); 
+    }); 
+#endif  
 
     HTTP.on("/mqttOn", HTTP_GET, [](AsyncWebServerRequest *request){
         request->getParam("mqttOn")->value().toInt()==1?mqttOn=true:mqttOn=false;
