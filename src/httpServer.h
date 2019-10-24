@@ -426,6 +426,60 @@ void init_HTTPServer(void) {
         P.displaySuspend(false);
     }); 
 
+    HTTP.on("/ledsetup", HTTP_GET, [](AsyncWebServerRequest *request){
+        speedTicker = 28 - request->getParam("speed_d")->value().toInt(); 
+        brightd = request->getParam("brightd")->value().toInt();
+        brightn = request->getParam("brightn")->value().toInt();
+        dmodefrom = request->getParam("dmodefrom")->value().toInt();
+        dmodeto = request->getParam("dmodeto")->value().toInt();
+        fontUsed = request->getParam("fontUsed")->value().toInt();
+        (fontUsed==0?P.setFont(_6bite_rus):fontUsed==1?P.setFont(_5bite_rus):fontUsed==2?P.setFont(_font_rus):P.setFont(_6bite_rus));
+        saveConfig();
+        P.setIntensity(brightd);
+        Serial.print("speedTicker ");Serial.println(speedTicker); Serial.print("brightd ");Serial.println(brightd);Serial.print("brightn ");Serial.println(brightn);
+        Serial.print("dmodefrom ");Serial.println(dmodefrom);Serial.print("dmodeto ");Serial.println(dmodeto);
+        request->send(200, "text/html", "OK"); 
+    });
+
+    HTTP.on("/weather", HTTP_GET, [](AsyncWebServerRequest *request){
+        W_URL = request->getParam("weatherHost")->value().c_str();
+        CITY_ID = request->getParam("city_code")->value().c_str(); 
+        W_API = request->getParam("w_api")->value().c_str();  
+        saveConfig();                 
+        strWeather = GetWeather(); delay(1000); strWeatherFcast = GetWeatherForecast();
+        Serial.println("W_URL: " + W_URL + ", CITY_ID: " + CITY_ID + ", W_API: " + W_API);
+        request->send(200, "text/html", "OK"); 
+    });    
+
+    HTTP.on("/weatherUpdate", HTTP_GET, [](AsyncWebServerRequest *request){
+        if(request->getParam("update")->value() == "ok") {
+            strWeather = GetWeather();
+            delay(1000);
+            strWeatherFcast = GetWeatherForecast();
+        }
+        request->send(200, "text/html", "OK"); 
+    });   
+
+    HTTP.on("/mqttSet", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->getParam("mqttOn")->value().toInt()==1?mqttOn=true:mqttOn=false;
+        mqtt_server = request->getParam("mqtt_server")->value().c_str();
+        mqtt_port = request->getParam("mqtt_port")->value().toInt();
+        mqtt_user = request->getParam("mqtt_user")->value().c_str();
+        mqtt_pass = request->getParam("mqtt_pass")->value().c_str();
+        mqtt_name = request->getParam("mqtt_name")->value().c_str();
+        mqtt_sub_crline = request->getParam("mqtt_sub_crline")->value().c_str();
+        saveConfig();                 // Функция сохранения данных во Flash
+        Serial.println("mqtt_server: " + mqtt_server + ", mqtt_user: " + mqtt_user + ", mqtt_name: " + mqtt_name);
+        request->send(200, "text/html", "OK"); 
+    });   
+
+    HTTP.on("/mqttOn", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->getParam("mqttOn")->value().toInt()==1?mqttOn=true:mqttOn=false;
+        saveConfig();   
+        Serial.println("mqttOn: " + String(mqttOn));
+        request->send(200, "text/html", "OK"); 
+    });   
+
     HTTP.onNotFound(notFound);
     HTTP.begin();
 }
