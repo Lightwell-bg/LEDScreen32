@@ -35,7 +35,7 @@ String getResponse() {
   String response = "";
   unsigned startTime = millis();
   delay (200);
-  while (!ESPclient.available() < 1 && ((millis()-startTime) < 5000)) {
+  while (!ESPclient.available() && ((millis()-startTime) < 5000)) {
         delay (5);
   }
   
