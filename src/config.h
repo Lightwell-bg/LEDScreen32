@@ -225,8 +225,8 @@ String crLine = "";
 unsigned long ReconnectTime = 0;  const unsigned long MQTT_CONNECT = 1000*60*3;
 #if AKA_CLOCK == true
 //alarm
-  #define ALARM_PIN 12  // D6 Define DST adjust button pin
-  #define BUZ_PIN 15  // D8 Define DST adjust button pin
+  #define ALARM_PIN 2  // D6 Define DST adjust button pin
+  #define BUZ_PIN 4  // D8 Define DST adjust button pin
   typedef struct {
     uint8_t alarm_h;   
     uint8_t alarm_m;     
