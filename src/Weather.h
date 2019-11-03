@@ -1,8 +1,12 @@
 String GetWeather() {
+  String weatherString;
+  static String oldWeather = "Wait weather"+W_URL;
   if (WiFi.status() != WL_CONNECTED) {
-    return "No connection to weather server (No Wi-Fi)";  
+    Serial.print(F("No connection to weather server (No Wi-Fi) ")); Serial.println(W_URL); 
+    weatherString = "*" + oldWeather;
+    return weatherString; 
   }  
-  Serial.print("connecting to "); Serial.println(W_URL);
+  Serial.print(F("connecting to ")); Serial.println(W_URL);
   String wStrURL = String("GET /data/2.5/weather?id=") + CITY_ID; 
   wStrURL += "&units=metric&appid=" + W_API;
   switch (lang) {
@@ -26,27 +30,24 @@ String GetWeather() {
     ESPclient.println(wStrURL);
   }
   else {
-    Serial.println("connection weather server failed");
-    //return "Weather server connection failed";
-    return "";
+    Serial.print(F("Connection weather server failed")); Serial.println(W_URL);
+    weatherString = "*" + oldWeather;
+    return weatherString; 
   }
   const size_t capacity = JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + 2*JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(6) + JSON_OBJECT_SIZE(13) + 270;
   DynamicJsonDocument root(capacity);
   String answerWeather = ESPclient.readString();
   DeserializationError error = deserializeJson(root, answerWeather);
   if (error) {
-    Serial.print(F("deserializeJson() failed with code "));
-    Serial.println(error.c_str());    
-    Serial.println("Json parsing failed!");
-    //return "Weather error (Json parsing failed!)";
+    Serial.print(F("Json parsing failed! ")); Serial.print(F("deserializeJson() failed with code ")); Serial.println(error.c_str());    
     ESPclient.stop();
-    return "";
+    weatherString = "*" + oldWeather;
+    return weatherString; 
   }
   ESPclient.stop();  
   Serial.println(answerWeather);
   float coord_lon = root["coord"]["lon"]; // 27.47
   float coord_lat = root["coord"]["lat"]; // 42.51  
-  String weatherString;
   weatherString = overboard[lang];
   JsonObject weather_0 = root["weather"][0];
   weatherString += weather_0["description"].as<String>();
@@ -72,15 +73,20 @@ String GetWeather() {
   else weatherString += windir_table[lang][7];
   uint8_t clouds = root["clouds"]["all"];
   weatherString += cloudstxt[lang] + String(clouds) + "% ";
-  Serial.println(weatherString);  
+  Serial.print(F("Get weather: ")); Serial.println(weatherString); 
+  oldWeather =  weatherString;
   return weatherString;
 }
 
 String GetWeatherForecast() {
+  String weatherString;
+  static String oldWeather = "Wait weather"+W_URL;
   if (WiFi.status() != WL_CONNECTED) {
-    return "No connection to weather server (No Wi-Fi)";  
+    Serial.print(F("No connection to weather server (No Wi-Fi) ")); Serial.println(W_URL); 
+    weatherString = "*" + oldWeather;
+    return weatherString;  
   }  
-  Serial.print("connecting to "); Serial.println(W_URL);
+  Serial.print(F("connecting to ")); Serial.println(W_URL);
   String wStrURL = String("GET /data/2.5/forecast?id=") + CITY_ID; 
   wStrURL += "&units=metric&appid=" + W_API;
   switch (lang) {
@@ -104,25 +110,22 @@ String GetWeatherForecast() {
     ESPclient.println(wStrURL);
   }
   else {
-    Serial.println("Weather server connection failed (forecast)");
-    //return "Weather server connection failed (forecast)";
-    return "";
+    Serial.print(F("Connection weather server failed")); Serial.println(W_URL);
+    weatherString = "*" + oldWeather;
+    return weatherString; 
   }
   const size_t capacity = 2*JSON_ARRAY_SIZE(1) + JSON_ARRAY_SIZE(2) + 4*JSON_OBJECT_SIZE(1) + 3*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(5) + 3*JSON_OBJECT_SIZE(7) + 2*JSON_OBJECT_SIZE(8) + 540;
   DynamicJsonDocument root(capacity);
   String answerWeather = ESPclient.readString();
   DeserializationError error = deserializeJson(root, answerWeather);
   if (error) {
-    Serial.print(F("deserializeJson() failed with code "));
-    Serial.println(error.c_str());    
-    Serial.println("Json parsing failed!");
-    //return "Weather error (Json parsing failed!)";
+    Serial.print(F("Json parsing failed! ")); Serial.print(F("deserializeJson() failed with code ")); Serial.println(error.c_str());    
     ESPclient.stop();
-    return "";
+    weatherString = "*" + oldWeather;
+    return weatherString; 
   }
   ESPclient.stop();  
   Serial.println(answerWeather);
-  String weatherString;
   weatherString = forecast[lang];
   JsonObject list = root["list"][0];
   JsonObject weather = root["list"][0]["weather"][0];
@@ -149,8 +152,9 @@ String GetWeatherForecast() {
   else weatherString += windir_table[lang][7];
   weatherString += list["wind"]["speed"].as<String>();
   weatherString += windsp[lang];  
-  Serial.println(weatherString);  
-  return weatherString;  
+  Serial.print(F("Get weather forecast: ")); Serial.println(weatherString); 
+  oldWeather =  weatherString;
+  return weatherString;
 }
 
 String WSea_URL = "worldseatemp.com";
