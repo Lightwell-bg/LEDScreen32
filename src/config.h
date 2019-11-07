@@ -1,6 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+const String modelName = "iLW";
 const String nVersion = "v1.0";
 #define USE_RTC true //USE OR NO VERSION
 #define AKA_CLOCK true //USE OR NO
@@ -14,7 +15,7 @@ const String nVersion = "v1.0";
   #include <Update.h>//for update firmware
   #include <ESPmDNS.h>//for Name of device ESPXX.local
   #include <HTTPClient.h>
-  //#include <ESP32SSDP.h>
+  #include <ESP32SSDP.h>
 #else
   #include <ESP8266WiFi.h>
   #include <ESPAsyncTCP.h>
@@ -24,6 +25,7 @@ const String nVersion = "v1.0";
   #include <ESP8266SSDP.h>
 #endif
 #include <ESPAsyncWebServer.h>
+#include <StreamString.h>
 #include <ArduinoJson.h>
 #include <SPI.h>
 #include <Wire.h> // must be included here so that Arduino library object file references work
@@ -63,13 +65,13 @@ PubSubClient mqttClient(ESPclient);
 #endif
 #if AKA_CLOCK == true
   #if USE_DHT == true
-    String cVersion = "iClock DHT22 " + urts + nVersion;
+    String cVersion = modelName + "" + "DHT22 " + urts + nVersion;
   #endif //DHT
   #if USE_BME280 == true // I2C D1, D2
-    String cVersion = "iClock BME280 " + urts + nVersion;
+    String cVersion = modelName + " " + "BME280 " + urts + nVersion;
   #endif //BME280  
 #else
-  String cVersion = "iScreen " + urts + nVersion;
+  String cVersion = modelName + " " +  "iScreen " + urts + nVersion;
 #endif
 
 #if AKA_CLOCK == true
@@ -232,6 +234,7 @@ unsigned long ReconnectTime = 0;  const unsigned long MQTT_CONNECT = 1000*60*3;
   #define ALARM_PIN 12  
   #define BUZ_PIN 15  
 #endif
+  const uint8_t day_byte[] = {1, 2, 4, 8, 16, 32, 64}; //1 - Sunday, 2 - Monday .... etc.
   typedef struct {
     uint8_t alarm_h;   
     uint8_t alarm_m;     

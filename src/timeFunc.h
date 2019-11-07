@@ -157,8 +157,10 @@ bool compTimeInt(float tFrom, float tTo, float tNow) { //Сравнение вр
 
 #if AKA_CLOCK == true
 void workAlarms() {
+  static bool checkStatus = 1; //don't set digitalWrite(BUZ_PIN, LOW) all time
   static unsigned long lastTimeAlarm;
-  static bool onAlarm;  
+  static bool onAlarm; 
+  uint8_t bitOn = 0; 
   time_t tn = time(NULL); 
   struct tm* tm = localtime(&tn); 
   if (digitalRead(ALARM_PIN)) {
@@ -169,23 +171,28 @@ void workAlarms() {
   if (stopAlarm && (millis()-timeStopAlarm > 1000*60)) { //через 1 min надо отключить кнопку остановки будильника
     stopAlarm = false;  
   }
-  if (stopAlarm || !((tm->tm_hour==myAlarm[0].alarm_h && tm->tm_min==myAlarm[0].alarm_m) || (tm->tm_hour==myAlarm[1].alarm_h && tm->tm_min==myAlarm[1].alarm_m))) {
-    digitalWrite(BUZ_PIN, LOW);  
+  if (checkStatus && (stopAlarm || !((tm->tm_hour==myAlarm[0].alarm_h && tm->tm_min==myAlarm[0].alarm_m) || (tm->tm_hour==myAlarm[1].alarm_h && tm->tm_min==myAlarm[1].alarm_m)))) {
+    digitalWrite(BUZ_PIN, LOW);
+    checkStatus = 0;  
   } 
-
-  if ((myAlarm[0].alarm_stat > 0) && tm->tm_hour==myAlarm[0].alarm_h && tm->tm_min==myAlarm[0].alarm_m && !stopAlarm) {
+  bitOn = (day_byte[tm->tm_wday]) & myAlarm[0].alarm_stat;
+  //Serial.print("bitOn "); Serial.println(bitOn);
+  if ((bitOn > 0) && tm->tm_hour==myAlarm[0].alarm_h && tm->tm_min==myAlarm[0].alarm_m && !stopAlarm) {
     if (millis()-lastTimeAlarm > 500) {
       digitalWrite(BUZ_PIN, onAlarm);
       lastTimeAlarm = millis();
       onAlarm = !onAlarm;
     }
-  }      
-  if ((myAlarm[1].alarm_stat > 0) && tm->tm_hour==myAlarm[1].alarm_h && tm->tm_min==myAlarm[1].alarm_m && !stopAlarm) {
+    checkStatus = 1;
+  }  
+  bitOn = (day_byte[tm->tm_wday]) & myAlarm[1].alarm_stat;    
+  if ((bitOn > 0) && tm->tm_hour==myAlarm[1].alarm_h && tm->tm_min==myAlarm[1].alarm_m && !stopAlarm) {
     if (millis()-lastTimeAlarm > 1000) {
       digitalWrite(BUZ_PIN, onAlarm);
       lastTimeAlarm = millis();
       onAlarm = !onAlarm;
     }
+    checkStatus = 1;
   }              
 }
 #endif

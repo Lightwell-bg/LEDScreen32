@@ -33,12 +33,30 @@ bool StartAPMode() {
   else return false;
 }
 
-/*void init_SSDP(void) {
-  // SSDP дескриптор
-  HTTP.on("/description.xml", HTTP_GET, []() {
-    SSDP.schema(HTTP.client());
-  });
-  //Если версия  2.0.0 закаментируйте следующую строчку
+static const char* ssdpTemplate =
+  "<?xml version=\"1.0\"?>"
+  "<root xmlns=\"urn:schemas-upnp-org:device-1-0\">"
+    "<specVersion>"
+      "<major>1</major>"
+      "<minor>0</minor>"
+    "</specVersion>"
+    "<URLBase>http://%u.%u.%u.%u/</URLBase>"
+    "<device>"
+      "<deviceType>upnp:rootdevice</deviceType>"
+      "<friendlyName>%s</friendlyName>"
+      "<presentationURL>index.html</presentationURL>"
+      "<serialNumber>%u</serialNumber>"
+      "<modelName>%s</modelName>"
+      "<modelNumber>%s</modelNumber>"
+      "<modelURL>http://www.espressif.com</modelURL>"
+      "<manufacturer>Espressif Systems</manufacturer>"
+      "<manufacturerURL>http://www.espressif.com</manufacturerURL>"
+      "<UDN>uuid:38323636-4558-4dda-9188-cda0e6%02x%02x%02x</UDN>"
+    "</device>"
+  "</root>\r\n"
+  "\r\n";
+
+void init_SSDP(void) {
   SSDP.setDeviceType("upnp:rootdevice");
   SSDP.setSchemaURL("description.xml");
   SSDP.setHTTPPort(80);
@@ -51,4 +69,29 @@ bool StartAPMode() {
   SSDP.setManufacturer("LIGHTWELL");
   SSDP.setManufacturerURL("https://led-lightwell.eu");
   SSDP.begin();
-}*/
+  HTTP.on("/description.xml", HTTP_GET, [](AsyncWebServerRequest *request) {
+      StreamString output;
+      if(output.reserve(1024)) {
+        //uint32_t ip = WiFi.localIP();
+#ifdef ESP32
+        uint32_t chipId = ESP.getEfuseMac();
+#else
+        uint32_t chipId = ESP.getChipId();    
+#endif  
+Serial.print("chipId "); Serial.println(chipId);        
+        output.printf(ssdpTemplate,
+          WiFi.localIP().toString(), //IP2STR(&ip),
+          SSDP_Name,
+          chipId,
+          modelName,
+          nVersion,
+          (uint8_t) ((chipId >> 16) & 0xff),
+          (uint8_t) ((chipId >>  8) & 0xff),
+          (uint8_t)   chipId        & 0xff
+        );
+        request->send(200, "text/xml", (String)output);
+      } else {
+        request->send(500);
+      }
+  });  
+}

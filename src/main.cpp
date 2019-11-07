@@ -15,13 +15,12 @@
 void setup() {
     Serial.begin(115200);
     char host[16];
-#ifdef ESP8266
-    snprintf(host, 12, "ESP%08X", ESP.getChipId());
-#else
+#ifdef ESP32
     snprintf(host, 16, "ESP%012llX", ESP.getEfuseMac());
+#else
+    snprintf(host, 12, "ESP%08X", ESP.getChipId());    
 #endif  
-    // Initialize SPIFFS
-    if(!SPIFFS.begin()) {
+    if(!SPIFFS.begin()) { // Initialize SPIFFS
         Serial.println("An Error has occurred while mounting SPIFFS");
         return;
     } 
@@ -34,7 +33,8 @@ void setup() {
     //MDNS.addService("http", "tcp", 80);
     Serial.printf("Ready! Open http://%s.local in your browser\n", host); 
     init_Time(); Serial.println(F("Start Time"));  
-    init_firmWareUpdate(); Serial.println(F("Start init FirmWare update")); 
+    init_firmWareUpdate(); Serial.println(F("Start init FirmWare update"));
+    init_SSDP(); Serial.println(F("Start SSDP"));
     init_HTTPServer(); Serial.println(F("HTTPServer init"));
     init_Display(); Serial.println(F("Start screen"));
     if (WiFi.status() != WL_CONNECTED)  {
