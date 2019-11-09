@@ -34,7 +34,7 @@ void setup() {
     Serial.printf("Ready! Open http://%s.local in your browser\n", host); 
     init_Time(); Serial.println(F("Start Time"));  
     init_firmWareUpdate(); Serial.println(F("Start init FirmWare update"));
-    init_SSDP(); Serial.println(F("Start SSDP"));
+    //init_SSDP(); Serial.println(F("Start SSDP"));
     init_HTTPServer(); Serial.println(F("HTTPServer init"));
     init_Display(); Serial.println(F("Start screen"));
     if (WiFi.status() != WL_CONNECTED)  {

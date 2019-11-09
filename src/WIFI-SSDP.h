@@ -33,7 +33,7 @@ bool StartAPMode() {
   else return false;
 }
 
-static const char* ssdpTemplate =
+/*static const char* ssdpTemplate =
   "<?xml version=\"1.0\"?>"
   "<root xmlns=\"urn:schemas-upnp-org:device-1-0\">"
     "<specVersion>"
@@ -94,4 +94,4 @@ Serial.print("chipId "); Serial.println(chipId);
         request->send(500);
       }
   });  
-}
+}*/
