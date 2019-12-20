@@ -349,31 +349,6 @@ void init_HTTPServer(void) {
     }); 
 #endif 
 
-    HTTP.on("/Time", HTTP_GET, [](AsyncWebServerRequest *request){
-        timeSynch();
-        request->send(200, "text/html", "time synch");
-    });
-
-    HTTP.on("/TimeZone", HTTP_GET, [](AsyncWebServerRequest *request){
-        timezone = request->getParam("timezone")->value().toInt(); // Получаем значение timezone из запроса конвертируем в int сохраняем в глобальной переменной
-        isDayLightSaving = request->getParam("isDayLightSaving")->value().toInt(); 
-        saveConfig();
-        timeSynch();
-        Serial.println("NTP Time Zone: " + String(timezone) + ",  isDayLightSaving: " + String(isDayLightSaving));
-        request->send(200, "text/html", "OK");
-    });
-
-    HTTP.on("/setntpserver", HTTP_GET, [](AsyncWebServerRequest *request){
-        sNtpServerName = request->getParam("ntpserver")->value(); 
-        #if USE_RTC == true
-            request->getParam("use_sync")->value().toInt()==1?useRTC=false:useRTC=true;
-        #endif
-        saveConfig();
-        timeSynch();
-        Serial.println("sNtpServerName: " + sNtpServerName + ", useRTC: " + useRTC);
-        request->send(200, "text/html", "OK");
-    });
-
     HTTP.on("/ledoption", HTTP_GET, [](AsyncWebServerRequest *request){
         request->getParam("isLedWeather")->value().toInt()==1?isLedWeather=true:isLedWeather=false; 
         request->getParam("isLedForecast")->value().toInt()==1?isLedForecast=true:isLedForecast=false;

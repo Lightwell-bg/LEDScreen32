@@ -1,5 +1,5 @@
 #define SECS_PER_HOUR 60*60
-const int   daylightOffset_sec = 0*SECS_PER_HOUR;
+const int daylightOffset_sec = 0*SECS_PER_HOUR;
 String sNtpServerName2 = "pool.ntp.org";
 String sNtpServerName3 = "time.nist.gov";
 
